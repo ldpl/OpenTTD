@@ -357,7 +357,9 @@ bool ScriptObject::ScriptDoCommandHelper<Tcmd, Tret(*)(DoCommandFlag, Targs...)>
 	if (!estimate_only && networking) ScriptObject::SetLastCommand(tile, EndianBufferWriter<CommandDataBuffer>::FromValue(args), Tcmd);
 
 	/* Try to perform the command. */
-	Tret res = ::Command<Tcmd>::Unsafe((StringID)0, networking ? ScriptObject::GetDoCommandCallback() : nullptr, false, estimate_only, tile, args);
+	_script_command = true;
+	Tret res = ::Command<Tcmd>::Unsafe((StringID)0, ScriptObject::GetDoCommandCallback(), false, estimate_only, tile, args);
+	_script_command = false;
 
 	if constexpr (std::is_same_v<Tret, CommandCost>) {
 		return ScriptObject::DoCommandProcessResult(res, callback, estimate_only);

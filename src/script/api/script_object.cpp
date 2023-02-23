@@ -25,6 +25,8 @@
 
 #include "../../safeguards.h"
 
+bool _script_command = false;
+
 /**
  * Get the storage associated with the current ScriptInstance.
  * @return The storage.
@@ -253,7 +255,7 @@ std::tuple<bool, bool, bool> ScriptObject::DoCommandPrep()
 	/* Are we only interested in the estimate costs? */
 	bool estimate_only = GetDoCommandMode() != nullptr && !GetDoCommandMode()();
 
-	bool networking = _networking && !_generating_world;
+	bool networking = _networking && !_generating_world && false;
 
 	if (ScriptObject::GetCompany() != OWNER_DEITY && !::Company::IsValidID(ScriptObject::GetCompany())) {
 		ScriptObject::SetLastError(ScriptError::ERR_PRECONDITION_INVALID_COMPANY);
@@ -287,29 +289,14 @@ bool ScriptObject::DoCommandProcessResult(const CommandCost &res, Script_Suspend
 	SetLastCost(res.GetCost());
 	SetLastCommandRes(true);
 
-	if (_generating_world) {
-		IncreaseDoCommandCosts(res.GetCost());
-		if (callback != nullptr) {
-			/* Insert return value into to stack and throw a control code that
-			 * the return value in the stack should be used. */
-			callback(GetActiveInstance());
-			throw SQInteger(1);
-		}
-		return true;
-	} else if (_networking) {
-		/* Suspend the script till the command is really executed. */
-		throw Script_Suspend(-(int)GetDoCommandDelay(), callback);
-	} else {
-		IncreaseDoCommandCosts(res.GetCost());
-
-		/* Suspend the script player for 1+ ticks, so it simulates multiplayer. This
-		 *  both avoids confusion when a developer launched the script in a
-		 *  multiplayer game, but also gives time for the GUI and human player
-		 *  to interact with the game. */
-		throw Script_Suspend(GetDoCommandDelay(), callback);
+	IncreaseDoCommandCosts(res.GetCost());
+	if (callback != nullptr) {
+		/* Insert return value into to stack and throw a control code that
+		 * the return value in the stack should be used. */
+		callback(GetActiveInstance());
+		throw SQInteger(1);
 	}
-
-	NOT_REACHED();
+	return true;
 }
 
 

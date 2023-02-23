@@ -2865,6 +2865,7 @@ CommandCost CmdTownSetText(DoCommandFlag flags, TownID town_id, const std::strin
  * @param growth_rate Amount of days between growth, or TOWN_GROWTH_RATE_NONE, or 0 to reset custom growth rate.
  * @return Empty cost or an error.
  */
+extern uint32 _frame_counter;
 CommandCost CmdTownGrowthRate(DoCommandFlag flags, TownID town_id, uint16 growth_rate)
 {
 	if (_current_company != OWNER_DEITY) return CMD_ERROR;
@@ -2873,6 +2874,7 @@ CommandCost CmdTownGrowthRate(DoCommandFlag flags, TownID town_id, uint16 growth
 	if (t == nullptr) return CMD_ERROR;
 
 	if (flags & DC_EXEC) {
+		if (t->index == 10) fprintf(stderr, "TICK %d GROWTH %d\n", (int)_frame_counter, (int)_tick_counter, (int)growth_rate);
 		if (growth_rate == 0) {
 			/* Just clear the flag, UpdateTownGrowth will determine a proper growth rate */
 			ClrBit(t->flags, TOWN_CUSTOM_GROWTH);

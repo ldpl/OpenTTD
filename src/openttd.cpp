@@ -1404,7 +1404,7 @@ void StateGameLoop()
 		{
 			PerformanceMeasurer script_framerate(PFE_ALLSCRIPTS);
 			AI::GameLoop();
-			Game::GameLoop();
+			if (!_networking) Game::GameLoop();
 		}
 #endif
 		UpdateLandscapingLimits();

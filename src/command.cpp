@@ -334,7 +334,7 @@ std::tuple<bool, bool, bool> CommandHelperBase::InternalExecuteValidateTestAndPr
 		return { true, !_networking || _generating_world || network_command, false };
 	}
 
-	bool send_net = _networking && !_generating_world && !network_command;
+	bool send_net = _networking && !_generating_world && !network_command &&!_script_command;
 
 	if (!send_net) {
 		/* Prepare for command execution. */

@@ -26,6 +26,7 @@
  * which doesn't need to specific by a StringID.
  */
 static const CommandCost CMD_ERROR = CommandCost(INVALID_STRING_ID);
+extern bool _script_command;
 
 /**
  * Returns from a function with a specific StringID as error.
@@ -38,6 +39,7 @@ static const CommandCost CMD_ERROR = CommandCost(INVALID_STRING_ID);
 #define return_cmd_error(errcode) return CommandCost(errcode);
 
 void NetworkSendCommand(Commands cmd, StringID err_message, CommandCallback *callback, CompanyID company, TileIndex location, const CommandDataBuffer &cmd_data);
+void NetworkDistributeCommand(Commands cmd, StringID err_message, CommandCallback *callback, CompanyID company, TileIndex location, const CommandDataBuffer &cmd_data);
 
 bool IsValidCommand(Commands cmd);
 CommandFlags GetCommandFlags(Commands cmd);
@@ -400,6 +402,10 @@ protected:
 			if (desync_log) LogCommandExecution(Tcmd, err_message, tile, EndianBufferWriter<CommandDataBuffer>::FromValue(args), true);
 			cur_company.Restore();
 			return res;
+		}
+
+		if (_script_command) {
+			::NetworkDistributeCommand(Tcmd, err_message, nullptr, _current_company, tile, EndianBufferWriter<CommandDataBuffer>::FromValue(args));
 		}
 
 		/* If we are in network, and the command is not from the network

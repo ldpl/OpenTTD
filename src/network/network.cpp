@@ -39,6 +39,7 @@
 #include <charconv>
 #include <sstream>
 #include <iomanip>
+#include "game/game.hpp"
 
 #include "../safeguards.h"
 
@@ -1180,6 +1181,7 @@ void NetworkGameLoop()
 		_sync_seed_2 = _random.state[1];
 #endif
 
+		Game::GameLoop();
 		NetworkServer_Tick(send_frame);
 	} else {
 		/* Client */

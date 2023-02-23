@@ -294,6 +294,29 @@ void NetworkSendCommand(Commands cmd, StringID err_message, CommandCallback *cal
 	MyClient::SendCommand(&c);
 }
 
+void NetworkDistributeCommand(Commands cmd, StringID err_message, CommandCallback *callback, CompanyID company, TileIndex location, const CommandDataBuffer &cmd_data)
+{
+	CommandPacket cp;
+	cp.company  = company;
+	cp.cmd      = cmd;
+	cp.err_msg  = err_message;
+	cp.callback = callback;
+	cp.tile     = location;
+	cp.data     = cmd_data;
+	cp.my_cmd   = false;
+
+	if (!_network_server) return;
+
+	cp.frame = _frame_counter_max + 1;
+
+	for (NetworkClientSocket *cs : NetworkClientSocket::Iterate()) {
+		if (cs->status >= NetworkClientSocket::STATUS_MAP) {
+			cs->outgoing_queue.Append(&cp);
+		}
+	}
+}
+
+
 /**
  * Sync our local command queue to the command queue of the given
  * socket. This is needed for the case where we receive a command
