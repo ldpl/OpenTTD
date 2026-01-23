@@ -121,7 +121,7 @@ struct MAPHChunkHandler : ChunkHandler {
 };
 
 struct MAPOChunkHandler : ChunkHandler {
-	MAPOChunkHandler() : ChunkHandler('MAPO', CH_RIFF) {}
+	MAPOChunkHandler() : ChunkHandler('MAPO', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -148,7 +148,7 @@ struct MAPOChunkHandler : ChunkHandler {
 };
 
 struct MAP2ChunkHandler : ChunkHandler {
-	MAP2ChunkHandler() : ChunkHandler('MAP2', CH_RIFF) {}
+	MAP2ChunkHandler() : ChunkHandler('MAP2', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -178,7 +178,7 @@ struct MAP2ChunkHandler : ChunkHandler {
 };
 
 struct M3LOChunkHandler : ChunkHandler {
-	M3LOChunkHandler() : ChunkHandler('M3LO', CH_RIFF) {}
+	M3LOChunkHandler() : ChunkHandler('M3LO', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -205,7 +205,7 @@ struct M3LOChunkHandler : ChunkHandler {
 };
 
 struct M3HIChunkHandler : ChunkHandler {
-	M3HIChunkHandler() : ChunkHandler('M3HI', CH_RIFF) {}
+	M3HIChunkHandler() : ChunkHandler('M3HI', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -232,7 +232,7 @@ struct M3HIChunkHandler : ChunkHandler {
 };
 
 struct MAP5ChunkHandler : ChunkHandler {
-	MAP5ChunkHandler() : ChunkHandler('MAP5', CH_RIFF) {}
+	MAP5ChunkHandler() : ChunkHandler('MAP5', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -259,7 +259,7 @@ struct MAP5ChunkHandler : ChunkHandler {
 };
 
 struct MAPEChunkHandler : ChunkHandler {
-	MAPEChunkHandler() : ChunkHandler('MAPE', CH_RIFF) {}
+	MAPEChunkHandler() : ChunkHandler('MAPE', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -299,7 +299,7 @@ struct MAPEChunkHandler : ChunkHandler {
 };
 
 struct MAP7ChunkHandler : ChunkHandler {
-	MAP7ChunkHandler() : ChunkHandler('MAP7', CH_RIFF) {}
+	MAP7ChunkHandler() : ChunkHandler('MAP7', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -326,7 +326,7 @@ struct MAP7ChunkHandler : ChunkHandler {
 };
 
 struct MAP8ChunkHandler : ChunkHandler {
-	MAP8ChunkHandler() : ChunkHandler('MAP8', CH_RIFF) {}
+	MAP8ChunkHandler() : ChunkHandler('MAP8', CH_READONLY) {}
 
 	void Load() const override
 	{
@@ -352,6 +352,69 @@ struct MAP8ChunkHandler : ChunkHandler {
 	}
 };
 
+
+struct MAPZChunkHandler : ChunkHandler {
+	MAPZChunkHandler() : ChunkHandler('MAPZ', CH_RIFF) {}
+
+	void Load() const override
+	{
+		std::array<uint8_t, MAP_SL_BUF_SIZE * 10> buf;
+		uint size = Map::Size();
+
+		uint j = MAP_SL_BUF_SIZE * 10;
+
+		for (uint8_t type = 0; type < 0x10; type++) {
+			for (TileIndex i{}; i != size; i++) {
+				if ((Tile(i).type() >> 4) != type) continue;
+
+				if (j == MAP_SL_BUF_SIZE * 10) {
+					SlCopy(buf.data(), MAP_SL_BUF_SIZE * 10, SLE_UINT8);
+					j = 0;
+				}
+
+				Tile(i).m1() = buf[j];
+				Tile(i).m2() = buf[j + 1] | ((uint16_t)buf[j + 2] << 8);
+				Tile(i).m3() = buf[j + 3];
+				Tile(i).m4() = buf[j + 4];
+				Tile(i).m5() = buf[j + 5];
+				Tile(i).m6() = buf[j + 6];
+				Tile(i).m7() = buf[j + 7];
+				Tile(i).m8() = buf[j + 8] | ((uint16_t)buf[j + 9] << 8);
+				j += 10;
+			}
+		}
+	}
+
+	void Save() const override
+	{
+		std::array<uint8_t, MAP_SL_BUF_SIZE * 10> buf;
+		uint size = Map::Size();
+		uint j = 0;
+
+		SlSetLength(static_cast<uint32_t>(size) * 10);
+		for (uint8_t type = 0; type < 0x10; type++) {
+			for (TileIndex i{}; i != size; i++) {
+				if ((Tile(i).type() >> 4) != type) continue;
+				buf[j] = Tile(i).m1();
+				buf[j + 1] = Tile(i).m2() & 0xFF;
+				buf[j + 2] = Tile(i).m2() >> 8;
+				buf[j + 3] = Tile(i).m3();
+				buf[j + 4] = Tile(i).m4();
+				buf[j + 5] = Tile(i).m5();
+				buf[j + 6] = Tile(i).m6();
+				buf[j + 7] = Tile(i).m7();
+				buf[j + 8] = Tile(i).m8() & 0xFF;
+				buf[j + 9] = Tile(i).m8() >> 8;
+				j += 10;
+				if (j == MAP_SL_BUF_SIZE * 10) {
+					SlCopy(buf.data(), MAP_SL_BUF_SIZE * 10, SLE_UINT8);
+					j = 0;
+				}
+			}
+		}
+	}
+};
+
 static const MAPSChunkHandler MAPS;
 static const MAPTChunkHandler MAPT;
 static const MAPHChunkHandler MAPH;
@@ -363,6 +426,7 @@ static const MAP5ChunkHandler MAP5;
 static const MAPEChunkHandler MAPE;
 static const MAP7ChunkHandler MAP7;
 static const MAP8ChunkHandler MAP8;
+static const MAPZChunkHandler MAPZ;
 static const ChunkHandlerRef map_chunk_handlers[] = {
 	MAPS,
 	MAPT,
@@ -375,6 +439,6 @@ static const ChunkHandlerRef map_chunk_handlers[] = {
 	MAPE,
 	MAP7,
 	MAP8,
+	MAPZ,
 };
-
 extern const ChunkHandlerTable _map_chunk_handlers(map_chunk_handlers);
